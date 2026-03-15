@@ -1,0 +1,51 @@
+name: Build Releases
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Build macOS
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller --noconfirm --windowed --name "iPhoneToolkit" src/iphone_toolkit/__main__.py
+
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        run: |
+          pyinstaller --noconfirm --windowed --name "iPhoneToolkit" src/iphone_toolkit/__main__.py
+
+      - name: Build Linux
+        if: runner.os == 'Linux'
+        run: |
+          pyinstaller --noconfirm --windowed --name "iPhoneToolkit" src/iphone_toolkit/__main__.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iphone-toolkit-${{ runner.os }}
+          path: dist/**
