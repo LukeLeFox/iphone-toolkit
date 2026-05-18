@@ -133,6 +133,10 @@ sudo apt install -y \
   usbmuxd \
   ideviceinstaller \
   idevicerestore
+
+
+  # On some older Debian/Ubuntu-based distributions, the Recovery utility package may be named
+  sudo apt install libirecovery-utils
 ```
 
 Useful checks:
