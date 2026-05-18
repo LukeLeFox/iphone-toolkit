@@ -129,7 +129,7 @@ sudo apt install -y \
   python-is-python3 \
   python3-tk \
   libimobiledevice-utils \
-  libirecovery-utils \
+  irecovery \
   usbmuxd \
   ideviceinstaller \
   idevicerestore
