@@ -1,51 +1,100 @@
-name: Build Releases
+name: Build iPhone Toolkit
 
 on:
+  workflow_dispatch:
   push:
+    branches:
+      - main
+      - master
     tags:
       - "v*"
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-
-    runs-on: ${{ matrix.os }}
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            artifact_name: iPhoneToolkit-Linux
+          - name: Windows
+            os: windows-latest
+            artifact_name: iPhoneToolkit-Windows
+          - name: macOS
+            os: macos-latest
+            artifact_name: iPhoneToolkit-macOS
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            pyproject.toml
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
-
-      - name: Build macOS
-        if: runner.os == 'macOS'
-        run: |
-          pyinstaller --noconfirm --windowed --name "iPhoneToolkit" src/iphone_toolkit/__main__.py
-
-      - name: Build Windows
-        if: runner.os == 'Windows'
-        run: |
-          pyinstaller --noconfirm --windowed --name "iPhoneToolkit" src/iphone_toolkit/__main__.py
-
-      - name: Build Linux
+      - name: Install Linux Tk prerequisites
         if: runner.os == 'Linux'
         run: |
-          pyinstaller --noconfirm --windowed --name "iPhoneToolkit" src/iphone_toolkit/__main__.py
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Syntax check
+        run: |
+          python -m compileall src
+
+      - name: Build Linux binary
+        if: runner.os == 'Linux'
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed \
+            --name iPhoneToolkit \
+            src/iphone_toolkit/__main__.py
+
+      - name: Build Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed `
+            --name iPhoneToolkit `
+            src/iphone_toolkit/__main__.py
+
+      - name: Build macOS app bundle
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller --noconfirm --clean --onedir --windowed \
+            --name iPhoneToolkit \
+            src/iphone_toolkit/__main__.py
+
+      - name: List dist output
+        shell: bash
+        run: |
+          find dist -maxdepth 3 -print || true
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: iphone-toolkit-${{ runner.os }}
+          name: ${{ matrix.artifact_name }}
           path: dist/**
+          if-no-files-found: error
+          retention-days: 14
