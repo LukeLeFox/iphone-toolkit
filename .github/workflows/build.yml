@@ -69,6 +69,8 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --onefile --windowed \
             --name iPhoneToolkit \
+            --paths src \
+            --collect-submodules iphone_toolkit \
             src/iphone_toolkit/__main__.py
 
       - name: Build Windows executable
@@ -77,6 +79,8 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --onefile --windowed `
             --name iPhoneToolkit `
+            --paths src `
+            --collect-submodules iphone_toolkit `
             src/iphone_toolkit/__main__.py
 
       - name: Build macOS app bundle
@@ -84,6 +88,8 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --onedir --windowed \
             --name iPhoneToolkit \
+            --paths src \
+            --collect-submodules iphone_toolkit \
             src/iphone_toolkit/__main__.py
 
       - name: List dist output
